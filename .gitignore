@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Node/JS front-end (if you use npm/yarn for static)
+node_modules/
+dist/
+build/
+
+# VSCode settings (optional)
+.vscode/
+
+# Google OAuth and tokens
+backend/credentials.json
+client_secrets.json
+token.pickle
+
+# OS junk
+Thumbs.db
