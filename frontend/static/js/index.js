@@ -93,11 +93,28 @@ window.addEventListener('DOMContentLoaded', () => {
     loadTranscripts();
 });
 
-// Placeholder logic for transcript display and action buttons
-document.getElementById('fetch-transcript-btn').onclick = function() {
-    const meetingId = document.getElementById('meeting-id-input').value;
-    document.getElementById('transcript-display').innerHTML =
-        `<p class="placeholder">[Would fetch transcript for Meeting ID: ${meetingId}]</p>`;
+// Transcript fetch and scrollable display
+document.getElementById('fetch-transcript-btn').onclick = async function() {
+    const meetingId = document.getElementById('meeting-id-input').value.trim();
+    const transcriptDisplay = document.getElementById('transcript-display');
+
+    if (!meetingId) {
+        transcriptDisplay.innerHTML = `<p class="placeholder">Please enter a Meeting ID.</p>`;
+        return;
+    }
+    transcriptDisplay.innerHTML = `<p class="placeholder">Fetching transcript...</p>`;
+
+    try {
+        const response = await fetch(`/api/transcript/${encodeURIComponent(meetingId)}`);
+        if (!response.ok) {
+            transcriptDisplay.innerHTML = `<p class="placeholder">Transcript not found.</p>`;
+            return;
+        }
+        const transcript = await response.text();
+        transcriptDisplay.innerHTML = `<pre>${transcript}</pre>`;
+    } catch (err) {
+        transcriptDisplay.innerHTML = `<p class="placeholder">Error fetching transcript.</p>`;
+    }
 };
 
 document.getElementById('create-action-item-btn').onclick = function() {

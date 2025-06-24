@@ -11,7 +11,7 @@ from pathlib import Path
 app = FastAPI()
 
 # Session middleware for login sessions
-app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_KEY_CHANGE_ME")
+app.add_middleware(SessionMiddleware, secret_key="very-long-secret-key-actionflow-project-1234567890")
 
 # Serve frontend and static files
 frontend_path = Path(__file__).parent.parent / "frontend"
@@ -117,6 +117,55 @@ def get_meet_transcripts(request: Request):
         ]
     })
 
+def extract_text_from_google_doc(doc):
+    text = ""
+    for idx, element in enumerate(doc.get("body", {}).get("content", [])):
+        if "paragraph" in element:
+            para_text = ""
+            for p_elem in element["paragraph"].get("elements", []):
+                if "textRun" in p_elem and "content" in p_elem["textRun"]:
+                    para_text += p_elem["textRun"]["content"]
+            text += para_text + "\n"
+    return text
+
+
+@app.get("/api/transcript/{meeting_id}")
+def get_transcript(request: Request, meeting_id: str):
+    creds_dict = request.session.get("credentials")
+    if not creds_dict:
+        return Response("Not authorized", status_code=401)
+    creds = Credentials(**creds_dict)
+    drive_service = build('drive', 'v3', credentials=creds)
+    docs_service = build('docs', 'v1', credentials=creds)
+
+    # Find "Meet Recordings" folder
+    folders = drive_service.files().list(
+        q="mimeType='application/vnd.google-apps.folder' and name='Meet Recordings' and trashed=false",
+        fields="files(id)").execute().get('files', [])
+    if not folders:
+        return Response("Meet Recordings folder not found.", status_code=404)
+    folder_id = folders[0]['id']
+
+    # Search for the file by name (assuming meeting_id is the name)
+    query = (
+        f"'{folder_id}' in parents and "
+        f"mimeType='application/vnd.google-apps.document' and "
+        f"name contains '{meeting_id}' and trashed=false"
+    )
+    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get('files', [])
+    if not files:
+        return Response("Transcript not found.", status_code=404)
+    
+    # Use the first matching file (can refine as needed)
+    file_id = files[0]['id']
+    doc = docs_service.documents().get(documentId=file_id).execute()
+    text = extract_text_from_google_doc(doc)
+    # Convert the content to plain text
+    print("=== Transcript extracted ===")
+    print(text)
+    print("=== End of transcript ===")
+    return Response(text, media_type="text/plain")
 # Optional: healthcheck route
 @app.get("/ping")
 def ping():
