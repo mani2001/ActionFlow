@@ -24,7 +24,7 @@ def serve_index():
 
 # ==== Google Auth Config ====
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-CLIENT_SECRETS_FILE = str(Path(__file__).parent / "client_secrets.json")
+CLIENT_SECRETS_FILE = str(Path(__file__).parent / "credentials.json")
 REDIRECT_URI = "http://localhost:8000/auth/callback"
 
 # ==== Google Drive Auth Routes ====
